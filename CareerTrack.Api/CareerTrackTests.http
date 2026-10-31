@@ -1,0 +1,152 @@
+﻿@baseUrl = http://localhost:5043
+
+### GET all job applications
+GET {{baseUrl}}/api/jobapplications
+Accept: application/json
+
+### GET job application by ID
+GET {{baseUrl}}/api/jobapplications/18
+Accept: application/json
+
+### GET all interviews
+GET {{baseUrl}}/api/interviews
+Accept: application/json
+
+### GET interview by ID
+GET {{baseUrl}}/api/interviews/8
+Accept: application/json
+
+### CREATE a test job application
+POST {{baseUrl}}/api/jobapplications
+Content-Type: application/json
+
+{
+  "jobTitle": "CareerTrack API Test Engineer",
+  "companyId": 1,
+  "applicationStatusId": 2,
+  "dateApplied": "2026-10-31T10:00:00",
+  "location": "Columbia, SC",
+  "jobUrl": "https://example.com/test-job",
+  "salary": 95000,
+  "notes": "Temporary record for Minor Project 5 testing"
+}
+
+### UPDATE test job application
+PUT {{baseUrl}}/api/jobapplications/18
+Content-Type: application/json
+
+{
+  "id": 18,
+  "jobTitle": "CareerTrack Senior API Test Engineer",
+  "companyId": 1,
+  "applicationStatusId": 2,
+  "dateApplied": "2026-10-31T10:00:00",
+  "location": "Charleston, SC",
+  "jobUrl": "https://example.com/test-job",
+  "salary": 105000,
+  "notes": "Updated during Minor Project 5 testing"
+}
+
+### CREATE test interview
+POST {{baseUrl}}/api/interviews
+Content-Type: application/json
+
+{
+  "interviewType": "Technical Interview",
+  "interviewDate": "2026-11-05T14:00:00",
+  "location": "Microsoft Teams",
+  "outcome": "Scheduled",
+  "notes": "Temporary interview for Minor Project 5 testing",
+  "jobApplicationId": 18
+}
+
+### UPDATE test interview
+PUT {{baseUrl}}/api/interviews/8
+Content-Type: application/json
+
+{
+  "id": 8,
+  "interviewType": "Technical Interview",
+  "interviewDate": "2026-11-06T15:00:00",
+  "location": "Zoom",
+  "outcome": "Rescheduled",
+  "notes": "Interview date and location updated",
+  "jobApplicationId": 18
+}
+
+### DELETE temporary interview
+DELETE {{baseUrl}}/api/interviews/8
+
+### VERIFY interview deletion
+GET {{baseUrl}}/api/interviews/8
+Accept: application/json
+
+### DELETE temporary job application
+DELETE {{baseUrl}}/api/jobapplications/18
+
+### VERIFY job application deletion
+GET {{baseUrl}}/api/jobapplications/18
+Accept: application/json
+
+### Business Rule 1: Reject duplicate company names
+POST {{baseUrl}}/api/companies
+Content-Type: application/json
+
+{
+  "name": "Microsoft",
+  "industry": "Technology",
+  "location": "Redmond, WA"
+}
+
+### Business Rule 2: Reject deletion of company with applications
+DELETE {{baseUrl}}/api/companies/1
+
+### Business Rule 3: Reject negative salary
+POST {{baseUrl}}/api/jobapplications
+Content-Type: application/json
+
+{
+  "jobTitle": "Invalid Salary Test",
+  "companyId": 1,
+  "applicationStatusId": 2,
+  "dateApplied": "2026-10-31T10:00:00",
+  "location": "Columbia, SC",
+  "salary": -5000,
+  "notes": "Testing negative salary validation"
+}
+
+### Business Rule 4A: Reject invalid company
+POST {{baseUrl}}/api/jobapplications
+Content-Type: application/json
+
+{
+  "jobTitle": "Invalid Company Test",
+  "companyId": 999,
+  "applicationStatusId": 2,
+  "dateApplied": "2026-10-31T10:00:00",
+  "salary": 90000
+}
+
+### Business Rule 4B: Reject invalid application status
+POST {{baseUrl}}/api/jobapplications
+Content-Type: application/json
+
+{
+  "jobTitle": "Invalid Status Test",
+  "companyId": 1,
+  "applicationStatusId": 999,
+  "dateApplied": "2026-10-31T10:00:00",
+  "salary": 90000
+}
+
+### Business Rule 5: Reject invalid job application reference
+POST {{baseUrl}}/api/interviews
+Content-Type: application/json
+
+{
+  "interviewType": "Technical Interview",
+  "interviewDate": "2026-11-05T14:00:00",
+  "location": "Zoom",
+  "outcome": "Scheduled",
+  "jobApplicationId": 999
+}

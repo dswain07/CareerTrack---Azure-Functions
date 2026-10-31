@@ -1,0 +1,58 @@
+# Visual Studio and IDE settings
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET build output
+**/bin/
+**/obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+TestResults/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Local SQLite databases and journal files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Local secrets and environment-specific settings
+.env
+.env.*
+!.env.example
+**/appsettings.Development.json
+**/appsettings.Local.json
+secrets.json
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Coverage and generated reports
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# Local backups
+wwwroot_backup/

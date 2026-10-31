@@ -1,0 +1,132 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerTrack - Job Application Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>CareerTrack</h1>
+        <p>Job Application Management System</p>
+    </header>
+
+    <nav class="main-nav">
+        <button onclick="showSection('dashboard')">Dashboard</button>
+        <button onclick="showSection('companies')">Companies</button>
+        <button onclick="showSection('applications')">Job Applications</button>
+        <button onclick="showSection('interviews')">Interviews</button>
+    </nav>
+
+    <main>
+
+        <!-- Dashboard -->
+        <section id="dashboard" class="content-section">
+            <h2>Dashboard</h2>
+
+            <div class="dashboard">
+                <div class="stat-card">
+                    <h3>Companies</h3>
+                    <p id="companyCount">0</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Job Applications</h3>
+                    <p id="applicationCount">0</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Interviews</h3>
+                    <p id="interviewCount">0</p>
+                </div>
+            </div>
+
+            <h3>Recent Job Applications</h3>
+            <div id="recentApplications"></div>
+        </section>
+
+        <!-- Companies -->
+        <section id="companies" class="content-section hidden">
+            <h2>Companies</h2>
+
+            <button onclick="showCompanyForm()">Add Company</button>
+
+            <p id="companyMessage" role="status" aria-live="polite"></p>
+
+            <form id="companyForm" class="hidden">
+                <h3 id="companyFormTitle">Add Company</h3>
+
+                <input type="hidden" id="companyId">
+
+                <label for="companyName">Company Name</label>
+                <input type="text" id="companyName" required maxlength="100">
+
+                <label for="companyIndustry">Industry</label>
+                <input type="text" id="companyIndustry">
+
+                <label for="companyLocation">Location</label>
+                <input type="text" id="companyLocation">
+
+                <div class="form-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" onclick="hideCompanyForm()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <div class="search-bar">
+                <input type="search" id="companySearch"
+                       placeholder="Search companies...">
+            </div>
+
+            <div id="companiesTable"></div>
+        </section>
+
+        <!-- Job Applications -->
+        <section id="applications" class="content-section hidden">
+            <h2>Job Applications</h2>
+
+            <div class="search-bar">
+                <input type="search" id="applicationSearch"
+                       placeholder="Search applications...">
+            </div>
+
+            <div id="applicationsTable"></div>
+        </section>
+
+        <!-- Interviews -->
+        <section id="interviews" class="content-section hidden">
+            <h2>Interviews</h2>
+
+            <div class="search-bar">
+                <input type="search" id="interviewSearch"
+                       placeholder="Search interviews...">
+            </div>
+
+            <div id="interviewsTable"></div>
+        </section>
+
+    </main>
+
+    <!-- Details Dialog -->
+    <div id="detailsModal" class="modal-overlay hidden">
+        <div class="modal-card" role="dialog"
+             aria-modal="true" aria-labelledby="detailsTitle">
+
+            <h2 id="detailsTitle">Record Details</h2>
+
+            <div id="detailsContent"></div>
+
+            <button type="button" onclick="hideDetails()">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
