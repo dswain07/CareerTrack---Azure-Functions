@@ -114,7 +114,7 @@ API responses use standard HTTP status codes such as `200 OK`, `201 Created`, `2
 
 `CompanyModel`, `JobApplicationModel`, and `InterviewModel` define the data exchanged with API clients. They expose the fields needed by the client while avoiding unnecessary navigation properties and nested EF Core entity graphs.
 
-## Graduate-level business rules
+## Business rules
 
 The business layer enforces five rules:
 
@@ -224,19 +224,6 @@ The six tests cover the five business rules because rule 4 has two separate fore
 
 The `CareerTrackTests.http` file contains requests for API testing. Tests that create or delete records should use temporary data rather than modifying original seed records.
 
-## Screenshots
-
-Add screenshots to a `Screenshots/` directory for submission, such as:
-
-- Dashboard with record counts
-- Companies page and Company Add/Edit operation
-- Job Applications page and application details
-- Interviews page and interview details
-- Successful API POST/PUT/DELETE responses
-- Business-rule rejection responses (`400` and `409`)
-
-Screenshots are not embedded here until they have been captured and added to the repository.
-
 ## Known limitations and future work
 
 The current browser UI provides full Company CRUD but mainly read-only views for JobApplications and Interviews. Potential enhancements include:
@@ -251,4 +238,8 @@ The current browser UI provides full Company CRUD but mainly read-only views for
 
 ## Coursework scope
 
-CareerTrack demonstrates a functioning three-tier service architecture, client-facing service models, REST API CRUD endpoints, and five graduate-level business rules. The current version is a local coursework prototype, not a production-ready multi-user service.
+CareerTrack demonstrates a functioning three-tier service architecture, client-facing service models, REST API CRUD endpoints, and five business rules. 
+
+## Author
+
+Divyashanu Swain
