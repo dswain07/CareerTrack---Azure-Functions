@@ -402,6 +402,7 @@ function renderApplications() {
 
             const actions = document.createElement("td");
 
+
             actions.appendChild(
                 createButton(
                     "View Details",
@@ -409,7 +410,29 @@ function renderApplications() {
                 )
             );
 
+            actions.appendChild(
+                createButton(
+                    "Calculate Score",
+                    () => calculateApplicationScore(application.id)
+                )
+            );
+
+            actions.appendChild(
+                createButton(
+                    "Follow-Up",
+                    () => generateFollowUpRecommendation(application.id)
+                )
+            );
+
+            actions.appendChild(
+                createButton(
+                    "Generate Report",
+                    () => generateApplicationReport(application.id)
+                )
+            );
+
             row.appendChild(actions);
+
         }
     );
 }
@@ -434,6 +457,153 @@ async function viewApplication(id) {
         alert(`Unable to retrieve job application: ${error.message}`);
     }
 }
+
+
+// ==========================================
+// Azure Functions - Minor Project 6
+// ==========================================
+
+function getApplicationStatus(statusId) {
+    const statuses = {
+        1: "Saved",
+        2: "Applied",
+        3: "Under Review",
+        4: "Interview",
+        5: "Offer",
+        6: "Rejected",
+        7: "Withdrawn"
+    };
+
+    return statuses[statusId] ?? "Unknown";
+}
+
+function getDaysSinceApplied(dateApplied) {
+    const appliedDate = new Date(dateApplied);
+    const today = new Date();
+
+    appliedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    return Math.max(
+        0,
+        Math.floor(
+            (today - appliedDate) / (1000 * 60 * 60 * 24)
+        )
+    );
+}
+
+// Function 1: Calculate Application Score
+async function calculateApplicationScore(id) {
+    try {
+        const application = applicationsData.find(a => a.id === id);
+
+        if (!application) {
+            throw new Error("Job application not found.");
+        }
+
+        const status = getApplicationStatus(
+            application.applicationStatusId
+        );
+
+        const days = getDaysSinceApplied(application.dateApplied);
+        const salary = application.salary ?? 0;
+
+        const params = new URLSearchParams({
+            status: status,
+            daysSinceApplied: days,
+            salary: salary
+        });
+
+        const result = await apiRequest(
+            `jobapplications/application-score?${params}`
+        );
+
+        showDetails("Azure Function - Application Score", [
+            ["Job Title", application.jobTitle],
+            ["Company", getCompanyName(application.companyId)],
+            ["Application Status", result.status],
+            ["Days Since Applied", result.daysSinceApplied],
+            ["Salary", formatSalary(result.salary)],
+            ["Status Score", result.statusScore],
+            ["Days Score", result.daysScore],
+            ["Salary Score", result.salaryScore],
+            ["Total Application Score", `${result.totalScore}/100`]
+        ]);
+
+    } catch (error) {
+        alert(`Unable to calculate application score: ${error.message}`);
+    }
+}
+
+// Function 2: Generate Follow-Up Recommendation
+async function generateFollowUpRecommendation(id) {
+    try {
+        const application = applicationsData.find(a => a.id === id);
+
+        if (!application) {
+            throw new Error("Job application not found.");
+        }
+
+        const status = getApplicationStatus(
+            application.applicationStatusId
+        );
+
+        const days = getDaysSinceApplied(application.dateApplied);
+
+        const params = new URLSearchParams({
+            status: status,
+            daysSinceApplied: days
+        });
+
+        const result = await apiRequest(
+            `jobapplications/follow-up-recommendation?${params}`
+        );
+
+        showDetails("Azure Function - Follow-Up Recommendation", [
+            ["Job Title", application.jobTitle],
+            ["Company", getCompanyName(application.companyId)],
+            ["Application Status", result.status],
+            ["Days Since Applied", result.daysSinceApplied],
+            ["Should Follow Up", result.shouldFollowUp ? "Yes" : "No"],
+            ["Recommendation", result.recommendation]
+        ]);
+
+    } catch (error) {
+        alert(`Unable to generate follow-up recommendation: ${error.message}`);
+    }
+}
+
+// Function 3: Generate Application Report
+async function generateApplicationReport(id) {
+    try {
+        const application = applicationsData.find(a => a.id === id);
+
+        if (!application) {
+            throw new Error("Job application not found.");
+        }
+
+        const result = await apiRequest(
+            `jobapplications/${id}/upload-report`,
+            {
+                method: "POST"
+            }
+        );
+
+        showDetails("Azure Blob Storage - Report Uploaded", [
+            ["Job Title", application.jobTitle],
+            ["Company", getCompanyName(application.companyId)],
+            ["Application ID", result.applicationId],
+            ["Status", result.message],
+            ["Container", result.containerName],
+            ["Report Filename", result.blobName]
+        ]);
+
+    } catch (error) {
+        alert(`Unable to generate report: ${error.message}`);
+    }
+}
+
+
 
 // ==========================================
 // Interviews

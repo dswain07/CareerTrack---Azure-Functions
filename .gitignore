@@ -56,3 +56,20 @@ coverage.*
 
 # Local backups
 wwwroot_backup/
+
+# Azure Functions local configuration
+**/local.settings.json
+
+# Visual Studio Azure publishing configuration
+**/Properties/PublishProfiles/
+**/Properties/ServiceDependencies/
+**/Properties/serviceDependencies*.json
+
+# Build outputs
+**/bin/
+**/obj/
+
+# Local secrets and environment files
+**/secrets.json
+**/.env
+**/.env.*

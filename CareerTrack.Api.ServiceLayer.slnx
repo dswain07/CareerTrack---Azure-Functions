@@ -4,6 +4,7 @@
     <File Path="DML.sql" />
   </Folder>
   <Project Path="CareerTrack.Api/CareerTrack.Api.csproj" />
+  <Project Path="CareerTrack.AzureFunctions/CareerTrack.AzureFunctions.csproj" Id="e84999a9-59fd-4c06-92b8-d17bc5019ae2" />
   <Project Path="CareerTrack.Business/CareerTrack.Business.csproj" Id="f2ea414a-c452-4a3a-a489-8670c88e2af7" />
   <Project Path="CareerTrack.Client/CareerTrack.Client.csproj" Id="627a35cc-b95d-4ecf-81ea-7a21d6531f80" />
   <Project Path="CareerTrack.Data/CareerTrack.Data.csproj" Id="1dc4113a-a7cd-4835-af66-07a78be1b6c6" />

@@ -1,6 +1,7 @@
 ﻿using CareerTrack.Data.Models;
 using CareerTrack.Data.Repositories;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using CareerTrack.Business.Models;
+using System.Net.Http.Json;
 
 namespace CareerTrack.Business.Services
 {
@@ -9,12 +10,14 @@ namespace CareerTrack.Business.Services
         private readonly JobApplicationRepository _jobApplicationRepository;
         private readonly CompanyRepository _companyRepository;
         private readonly ApplicationStatusRepository _applicationStatusRepository;
+        private readonly HttpClient _httpClient;
 
-        public JobApplicationService(JobApplicationRepository jobApplicationRepository, CompanyRepository companyRepository, ApplicationStatusRepository applicationStatusRepository)
+        public JobApplicationService(JobApplicationRepository jobApplicationRepository, CompanyRepository companyRepository, ApplicationStatusRepository applicationStatusRepository, HttpClient httpClient)
         {
             _jobApplicationRepository = jobApplicationRepository;
             _companyRepository = companyRepository;
             _applicationStatusRepository = applicationStatusRepository;
+            _httpClient = httpClient;
         }
         public async Task<List<JobApplication>> GetAllAsync()
         {
@@ -74,6 +77,32 @@ namespace CareerTrack.Business.Services
         public async Task<bool> DeleteAsync(int id)
         {
             return await _jobApplicationRepository.DeleteAsync(id);
+        }
+        public async Task<ApplicationScoreResult> CalculateApplicationScoreAsync(string status, int daysSinceApplied, decimal salary)
+        {
+            string url =
+                $"api/CalculateApplicationScore" +
+                $"?status={Uri.EscapeDataString(status)}" +
+                $"&daysSinceApplied={daysSinceApplied}" +
+                $"&salary={salary.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+            var result = await _httpClient.GetFromJsonAsync<ApplicationScoreResult>(url);
+
+            return result ?? throw new InvalidOperationException(
+                "Azure Function returned an empty application score.");
+        }
+
+        public async Task<FollowUpRecommendationResult> GenerateFollowUpRecommendationAsync(string status, int daysSinceApplied)
+        {
+            string url =
+                $"api/GenerateFollowUpRecommendation" +
+                $"?status={Uri.EscapeDataString(status)}" +
+                $"&daysSinceApplied={daysSinceApplied}";
+
+            var result = await _httpClient.GetFromJsonAsync<FollowUpRecommendationResult>(url);
+
+            return result ?? throw new InvalidOperationException(
+                "Azure Function returned an empty follow-up recommendation.");
         }
     }
 }

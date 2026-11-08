@@ -150,3 +150,77 @@ Content-Type: application/json
   "outcome": "Scheduled",
   "jobApplicationId": 999
 }
+
+### ========================================
+### SUBMISSION SCREENSHOTS - JOB APPLICATIONS
+### ========================================
+### JobApplication POST - Create
+POST {{baseUrl}}/api/jobapplications
+Content-Type: application/json
+
+{
+  "jobTitle": "CareerTrack Screenshot Test",
+  "companyId": 1,
+  "applicationStatusId": 2,
+  "dateApplied": "2026-10-31T10:00:00",
+  "location": "Columbia, SC",
+  "jobUrl": "https://example.com/test",
+  "salary": 90000,
+  "notes": "Temporary record for screenshot demonstration"
+}
+
+
+### JobApplication PUT - Update
+PUT {{baseUrl}}/api/jobapplications/19
+Content-Type: application/json
+
+{
+  "id": 19,
+  "jobTitle": "CareerTrack Screenshot Test Updated",
+  "companyId": 1,
+  "applicationStatusId": 2,
+  "dateApplied": "2026-10-31T10:00:00",
+  "location": "Charleston, SC",
+  "jobUrl": "https://example.com/test",
+  "salary": 100000,
+  "notes": "Updated for screenshot demonstration"
+}
+
+### JobApplication DELETE
+DELETE {{baseUrl}}/api/jobapplications/19
+
+
+### ========================================
+### SUBMISSION SCREENSHOTS - INTERVIEWS
+### ========================================
+
+### POST - Create Interview
+POST {{baseUrl}}/api/interviews
+Content-Type: application/json
+
+{
+  "interviewType": "Technical Interview",
+  "interviewDate": "2026-11-10T14:00:00",
+  "location": "Microsoft Teams",
+  "outcome": "Scheduled",
+  "notes": "Temporary interview for submission screenshots",
+  "jobApplicationId": 1
+}
+
+
+### PUT - Update Interview
+PUT {{baseUrl}}/api/interviews/9
+Content-Type: application/json
+
+{
+  "id": 9,
+  "interviewType": "Technical Interview",
+  "interviewDate": "2026-11-12T15:00:00",
+  "location": "Zoom",
+  "outcome": "Rescheduled",
+  "notes": "Updated interview for submission screenshots",
+  "jobApplicationId": 1
+}
+
+### DELETE - Remove Interview
+DELETE {{baseUrl}}/api/interviews/9
