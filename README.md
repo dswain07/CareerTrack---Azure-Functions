@@ -1,10 +1,6 @@
 # CareerTrack — Azure Functions & Blob Storage Integration
 
 **Course:** CSCE 547 — Windows Programming | Minor Project 6  
-**Academic Level:** Graduate  
-**Repository:** [https://github.com/dswain07/CareerTrack---Azure-Functions](https://github.com/dswain07/CareerTrack---Azure-Functions)  
-**Development Environment:** Visual Studio 2026 | .NET 10 | Microsoft Azure  
-
 ---
 
 ## 1. Project Overview
