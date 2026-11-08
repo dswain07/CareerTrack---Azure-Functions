@@ -1,153 +1,285 @@
-# CareerTrack — Job Application Management System
+# CareerTrack — Azure Functions & Blob Storage Integration
 
-**CSCE 547: Windows Programming | Minor Project 5**
+**Course:** CSCE 547 — Windows Programming | Minor Project 6  
+**Academic Level:** Graduate  
+**Repository:** [https://github.com/dswain07/CareerTrack---Azure-Functions](https://github.com/dswain07/CareerTrack---Azure-Functions)  
+**Development Environment:** Visual Studio 2026 | .NET 10 | Microsoft Azure  
 
-CareerTrack is a job application management system built with C#, ASP.NET Core Web API, Entity Framework Core, and SQLite. It demonstrates a layered application architecture, RESTful CRUD operations, business-rule validation, and a browser-based client built with HTML, CSS, and JavaScript.
+---
 
-## Project overview
+## 1. Project Overview
 
-CareerTrack organizes employer information, job applications, and interview records in one place. The application uses an existing SQLite database from the earlier CareerTrack project and exposes the data through an ASP.NET Core Web API.
+**CareerTrack** is a full-stack job application tracking system built with C#, ASP.NET Core Web API, Entity Framework Core, SQLite, HTML5, CSS3, JavaScript, and Microsoft Azure. The application provides an interactive web interface to track companies, application pipelines, and interview stages.
 
-The current browser interface provides:
+This project extends Minor Project 5 by introducing three cloud-integrated capabilities:
+1. **Application Priority Scoring:** Calculates a weighted application priority score (0–100) using application status, elapsed days since submission, and salary.
+2. **Follow-Up Recommendations:** Determines recruiter outreach timing and actionable advice based on predefined rules across application lifecycle stages.
+3. **Azure Blob Storage Reports (Graduate Requirement):** Generates structured JSON reports containing application and company metadata and uploads them securely into a private Azure Blob Storage container.
 
-- A dashboard showing counts of companies, job applications, and interviews, plus recent applications.
-- Lists, search, and individual detail views for companies, job applications, and interviews.
-- Create, view, update, and delete operations for companies.
-- Business-rule validation through the API.
+---
 
-The API additionally supports full CRUD for job applications and interviews, even though the current browser interface exposes these entities primarily as read-only views.
+## 2. Technologies Used
 
-## Technology stack
+| Technology | Purpose |
+| :--- | :--- |
+| **C# 14 / .NET 10** | Core backend language and application framework |
+| **ASP.NET Core Web API** | RESTful service layer and static file hosting |
+| **Entity Framework Core** | Object-Relational Mapping (ORM) for data persistence |
+| **SQLite** | Embedded relational database |
+| **HTML5 / CSS3** | Web UI structure and custom styles |
+| **JavaScript (ES6+)** | Client-side asynchronous interaction via `fetch` API |
+| **Azure Functions (.NET 10 Isolated)** | Serverless compute for scoring and recommendation logic |
+| **Azure Blob Storage** | Private cloud storage for serialized JSON application reports |
+| **Azure Functions Flex Consumption** | Linux-based serverless hosting tier |
+| **HttpClient / IHttpClientFactory** | Inter-service HTTP communication between API and Azure |
+| **Visual Studio 2026** | Integrated Development Environment (IDE) |
+| **Git & GitHub** | Version control and remote repository hosting |
 
-| Component | Technology |
-| --- | --- |
-| Language | C# |
-| Framework | .NET 10 / ASP.NET Core Web API |
-| Data access | Entity Framework Core |
-| Database | SQLite |
-| Client | HTML, CSS, JavaScript (`fetch`) |
-| Development environment | Visual Studio on Windows |
-| API testing | Visual Studio `.http` requests |
+---
 
-## Architecture
+## 3. System Architecture
 
-CareerTrack separates responsibilities into three main application layers, with a separate browser client:
+CareerTrack adheres to a layered architecture enforcing clean separation between presentation, API controllers, business domain logic, data persistence, and serverless cloud services.
 
 ```text
-Browser Client (wwwroot: HTML / CSS / JavaScript)
-                      |
-                 HTTP / JSON
-                      |
-CareerTrack.Api       |  REST endpoints and service models
-                      v
-CareerTrack.Business  |  Business services and validation rules
-                      v
-CareerTrack.Data      |  Repositories, EF Core models, DbContext
-                      v
-                 SQLite Database
+CareerTrack Web Interface
+(HTML, CSS, JavaScript)
+          │
+          │ HTTP Requests (fetch)
+          ▼
+CareerTrack.Api
+(ASP.NET Core Web API)
+          │
+          ▼
+CareerTrack.Business
+(Business Logic & HttpClient)
+          │
+          ├─────────────────────────────────────────┐
+          │                                         │
+          ▼                                         ▼
+CareerTrack.Data                            Microsoft Azure
+(Repositories & SQLite)                     │
+                                            ├── Azure Functions (Flex Consumption)
+                                            │   ├── CalculateApplicationScore
+                                            │   └── GenerateFollowUpRecommendation
+                                            │
+                                            └── Azure Blob Storage
+                                                └── careertrack-reports (Private)
 ```
 
-### Solution projects
+### Request Flow Dynamics
 
-- **CareerTrack.Api** — ASP.NET Core controllers, client-facing service models, application startup, and static web client in `wwwroot`.
-- **CareerTrack.Business** — `CompanyService`, `JobApplicationService`, and `InterviewService` implement application logic and validation.
-- **CareerTrack.Data** — EF Core entity models, `CareerTrackDbContext`, repositories, and migrations.
-- **CareerTrack.Client** — A separate C# console HTTP client used for API demonstrations and testing. The browser interface is the primary user-facing client.
+#### Azure Functions Flow
+1. The user selects an action in the CareerTrack web interface.
+2. Client-side JavaScript sends an HTTP request to the CareerTrack API.
+3. The API controller delegates the call to the corresponding business layer service.
+4. The business layer uses `HttpClient` to invoke the deployed Azure Function over HTTPS.
+5. The Azure Function processes the input parameters and returns a JSON payload.
+6. The business layer and API pass the result back to the web interface.
+> *Note: The client never directly calls Azure Functions; all traffic is routed through the API gateway.*
 
-The API controllers call business services, which call data repositories. Database queries are not performed directly in the controllers.
+#### Blob Storage Flow
+1. The user clicks **Generate Report** in the web interface.
+2. The browser sends a `POST` request to `/api/jobapplications/{id}/upload-report`.
+3. The API invokes `BlobReportService`.
+4. `BlobReportService` queries SQLite via EF Core to fetch the application and associated company.
+5. The service serializes the data into a JSON document.
+6. The JSON payload is uploaded to the private Azure Blob Storage container (`careertrack-reports`).
+7. Confirmation and the generated filename are returned to the client interface.
 
-## Database design
+---
 
-The SQLite database contains five tables:
+## 4. Project Structure
 
-| Table | Description |
-| --- | --- |
-| `Companies` | Employer name, industry, location, and website |
-| `ApplicationStatuses` | Lookup values for application progress |
-| `JobApplications` | Position, application date, company, status, location, salary, URL, and notes |
-| `Interviews` | Interview type, date, location, outcome, notes, and associated application |
-| `Contacts` | Recruiter/contact details associated with companies |
+```text
+CareerTrack.Api.ServiceLayer/
+│
+├── CareerTrack.Api/                      # ASP.NET Core Web API & Static Web Host
+│   ├── Controllers/                      # REST API endpoints
+│   ├── ServiceModels/                    # Request/Response DTOs
+│   ├── wwwroot/                          # Web UI assets
+│   │   ├── index.html                    # Dashboard interface
+│   │   ├── app.js                        # Client logic & API calls
+│   │   └── style.css                     # Custom styling
+│   └── Program.cs                        # App initialization & DI configuration
+│
+├── CareerTrack.Business/                 # Business logic and external integrations
+│   ├── Models/                           # Business domain models
+│   │   ├── ApplicationScoreResult.cs
+│   │   └── FollowUpRecommendationResult.cs
+│   └── Services/                         # Domain and cloud service integrations
+│       ├── CompanyService.cs
+│       ├── JobApplicationService.cs
+│       ├── InterviewService.cs
+│       └── BlobReportService.cs          # Azure Blob Storage client service
+│
+├── CareerTrack.Data/                     # EF Core Data Context & Entities
+│   ├── Data/                             # CareerTrackDbContext
+│   └── Models/                           # Entity definitions
+│
+├── CareerTrack.Data.Repositories/        # Data Access Layer
+│   └── Repositories/                     # Repository pattern implementations
+│
+├── CareerTrack.AzureFunctions/           # Serverless Microservices Project
+│   ├── CalculateApplicationScore.cs      # Score calculation function
+│   ├── GenerateFollowUpRecommendation.cs # Follow-up recommendation function
+│   ├── Program.cs                        # Isolated worker setup
+│   └── host.json                         # Functions runtime configuration
+│
+├── CareerTrack.Client/                   # Original MP5 Console Client
+└── CareerTrack.Api.ServiceLayer.slnx     # Visual Studio Solution file
+```
 
-Relationships include:
+---
 
-- `JobApplications.CompanyId` → `Companies.Id`
-- `JobApplications.ApplicationStatusId` → `ApplicationStatuses.Id`
-- `Interviews.JobApplicationId` → `JobApplications.Id`
-- `Contacts.CompanyId` → `Companies.Id`
+## 5. Application Features
 
-The original EF Core migration configures cascading foreign-key deletes. The business layer adds a rule that prevents deleting a company with associated job applications through the API.
+### Baseline Management Features
+- Display companies, job applications, and interview records.
+- Retrieve individual records via REST API endpoints.
+- Full CRUD operations for company records.
+- Filter, search, and sort displayed records.
+- Inspect detailed application records (status, salary, company, date applied, notes).
+- Aggregate metrics displayed on a web dashboard.
 
-Sample seed data includes **10 companies, 7 application statuses, 15 job applications, 5 interviews, and 3 contacts**. The database may contain different counts after interactive testing.
+### Feature 1: Application Priority Scoring
+The `CalculateApplicationScore` Azure Function computes a deterministic priority score between 0 and 100 based on application status, elapsed time, and salary:
 
-The `Scripts/` folder contains:
+* **Endpoint:** `GET /api/CalculateApplicationScore`
+* **Query Parameters:** `status` (string), `daysSinceApplied` (int), `salary` (decimal)
 
-- `DDL.sql` — Creates the database tables, constraints, and indexes.
-- `DML.sql` — Inserts the sample records into a freshly created schema.
+```json
+// Example Request:
+// GET /api/CalculateApplicationScore?status=Applied&daysSinceApplied=12&salary=120000
 
-**Do not run these initialization scripts against a populated CareerTrack database.** Use a new, empty SQLite database when testing them.
+{
+  "status": "Applied",
+  "daysSinceApplied": 12,
+  "salary": 120000,
+  "statusScore": 15,
+  "daysScore": 15,
+  "salaryScore": 20,
+  "totalScore": 50
+}
+```
 
-## REST API endpoints
+### Feature 2: Follow-Up Recommendations
+The `GenerateFollowUpRecommendation` Azure Function determines whether candidate outreach is warranted based on predefined stage criteria:
 
-The API exposes the following operations:
+* **Endpoint:** `GET /api/GenerateFollowUpRecommendation`
+* **Query Parameters:** `status` (string), `daysSinceApplied` (int)
 
-| Entity | Method | Endpoint | Purpose |
-| --- | --- | --- | --- |
-| Companies | GET | `/api/companies` | List companies |
-| Companies | GET | `/api/companies/{id}` | Retrieve company by ID |
-| Companies | POST | `/api/companies` | Create company |
-| Companies | PUT | `/api/companies/{id}` | Update company |
-| Companies | DELETE | `/api/companies/{id}` | Delete company |
-| Job Applications | GET | `/api/jobapplications` | List applications |
-| Job Applications | GET | `/api/jobapplications/{id}` | Retrieve application by ID |
-| Job Applications | POST | `/api/jobapplications` | Create application |
-| Job Applications | PUT | `/api/jobapplications/{id}` | Update application |
-| Job Applications | DELETE | `/api/jobapplications/{id}` | Delete application |
-| Interviews | GET | `/api/interviews` | List interviews |
-| Interviews | GET | `/api/interviews/{id}` | Retrieve interview by ID |
-| Interviews | POST | `/api/interviews` | Create interview |
-| Interviews | PUT | `/api/interviews/{id}` | Update interview |
-| Interviews | DELETE | `/api/interviews/{id}` | Delete interview |
+```json
+// Example Request:
+// GET /api/GenerateFollowUpRecommendation?status=Applied&daysSinceApplied=10
 
-API responses use standard HTTP status codes such as `200 OK`, `201 Created`, `204 No Content`, `400 Bad Request`, `404 Not Found`, and `409 Conflict`.
+{
+  "status": "Applied",
+  "daysSinceApplied": 10,
+  "shouldFollowUp": true,
+  "recommendation": "Follow up with the recruiter."
+}
+```
 
-### Service models
+### Feature 3: Azure Blob Storage Reports (Graduate Requirement)
+Automates report generation and cloud upload for individual applications:
 
-`CompanyModel`, `JobApplicationModel`, and `InterviewModel` define the data exchanged with API clients. They expose the fields needed by the client while avoiding unnecessary navigation properties and nested EF Core entity graphs.
+* **Storage Account:** `careertrackmp6storage`
+* **Container Name:** `careertrack-reports`
+* **Container Access:** Private
+* **Payload Format:** JSON
+* **Target Region:** West US 2
 
-## Business rules
+```json
+// Example Report Structure:
+{
+  "ApplicationId": 1,
+  "JobTitle": "Software Engineer",
+  "Company": "Microsoft",
+  "ApplicationStatusId": 2,
+  "DateApplied": "2026-10-01T00:00:00",
+  "GeneratedAtUtc": "2026-11-08T21:14:13Z"
+}
+```
 
-The business layer enforces five rules:
+---
 
-1. **Prevent duplicate company names.** Names are compared after trimming surrounding whitespace and ignoring case. Applies to company creation and updates.
-2. **Prevent deletion of companies with job applications.** The API rejects deletion when related job applications exist.
-3. **Reject negative salaries.** A job application's salary may be unknown (`null`), but a negative value is invalid. Applies to creation and updates.
-4. **Validate company and application status references.** A job application must reference an existing company and application status. Applies to creation and updates.
-5. **Validate interview application references.** An interview must reference an existing job application. Applies to creation and updates.
+## 6. Azure Deployment
 
-These checks run in business services before calling the repository to save changes.
+The serverless components and cloud storage resources were deployed using an **Azure for Students** subscription.
 
-## Running the application
+### Cloud Resource Specifications
+
+| Component | Configuration |
+| :--- | :--- |
+| **Resource Group** | `CareerTrack-MP6-RG` |
+| **Function App** | `careertrack-mp6-flex` |
+| **Hosting Plan** | Flex Consumption |
+| **Operating System** | Linux |
+| **Target Runtime** | .NET 10 Isolated Worker |
+| **Region** | West US 2 |
+| **Instance Memory** | 512 MB |
+| **Storage Account** | `careertrackmp6storage` (Standard LRS) |
+| **Application Insights** | Disabled |
+
+### Deployment Considerations & Resolution
+- **Consumption Quota Workaround:** The standard Windows Consumption plan was unavailable due to a zero-quota limit on App Service instances (`Y1`) under the student subscription. Switching to the **Azure Functions Flex Consumption** hosting plan on Linux bypassed this restriction.
+- **Regional Constraints:** Regional storage capacity restrictions in East US were resolved by provisioning both the storage account and the Function App within **West US 2**.
+
+---
+
+## 7. REST API Endpoints
+
+### Core Entities API
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/companies` | Retrieve all companies |
+| `GET` | `/api/companies/{id}` | Retrieve company by ID |
+| `POST` | `/api/companies` | Create a company |
+| `PUT` | `/api/companies/{id}` | Update a company |
+| `DELETE` | `/api/companies/{id}` | Delete a company |
+| `GET` | `/api/jobapplications` | Retrieve all applications |
+| `GET` | `/api/jobapplications/{id}` | Retrieve application by ID |
+| `POST` | `/api/jobapplications` | Create an application |
+| `PUT` | `/api/jobapplications/{id}` | Update an application |
+| `DELETE` | `/api/jobapplications/{id}` | Delete an application |
+| `GET` | `/api/interviews` | Retrieve all interviews |
+| `GET` | `/api/interviews/{id}` | Retrieve interview by ID |
+
+### Minor Project 6 Cloud Integration Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/jobapplications/application-score` | Proxies scoring request to Azure Function |
+| `GET` | `/api/jobapplications/follow-up-recommendation` | Proxies follow-up request to Azure Function |
+| `POST` | `/api/jobapplications/{id}/upload-report` | Generates and uploads JSON report to Blob Storage |
+
+---
+
+## 8. Local Setup & Execution Guide
 
 ### Prerequisites
+- Windows 10 or Windows 11
+- [.NET 10 SDK](https://dotnet.microsoft.com/)
+- Visual Studio 2026 (with ASP.NET and Azure development workloads)
+- Git
+- Active Azure subscription with a provisioned Blob Storage account
 
-- Windows with Visual Studio (ASP.NET and web development workload)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Git (for cloning the repository)
-- SQLite database file or a new database initialized from the provided scripts/migrations
-
-### 1. Clone and open the solution
-
+### 1. Clone the Repository
 ```bash
-git clone <REPOSITORY-URL>
-cd <REPOSITORY-DIRECTORY>
+git clone https://github.com/dswain07/CareerTrack---Azure-Functions.git
+cd CareerTrack---Azure-Functions
 ```
 
-Replace the placeholders with the actual GitHub repository URL and directory. Open the solution (`.sln` or `.slnx`) in Visual Studio.
+### 2. Restore Dependencies and Build
+```bash
+dotnet restore CareerTrack.Api.ServiceLayer.slnx
+dotnet build CareerTrack.Api.ServiceLayer.slnx
+```
 
-### 2. Configure SQLite
-
-The API reads its connection string from `CareerTrack.Api/appsettings.json`:
-
+### 3. Configure Database
+Ensure the `DefaultConnection` string in `CareerTrack.Api/appsettings.json` points to your SQLite database:
 ```json
 {
   "ConnectionStrings": {
@@ -155,90 +287,89 @@ The API reads its connection string from `CareerTrack.Api/appsettings.json`:
   }
 }
 ```
-
-`Data Source=careertrack.db` is a **relative path**. SQLite resolves it relative to the application's working directory. Ensure that the expected database file is available there, or replace the value with a path to the database file.
-
-For a new database, create the schema and seed data using the supplied SQL scripts in a fresh SQLite database, or use the project's EF Core migration workflow. Avoid running initialization scripts against the existing populated database.
-
-### 3. Build the solution
-
-In Visual Studio, select **Build → Build Solution**. Alternatively, from the solution directory:
-
+If initializing from scratch, apply Entity Framework Core migrations:
 ```bash
-dotnet build
+dotnet ef database update --project CareerTrack.Data --startup-project CareerTrack.Api
 ```
 
-### 4. Start the API and web interface
+### 4. Configure Azure Storage Secrets
+Never commit credentials to source control. Use ASP.NET Core User Secrets for local development:
+```bash
+cd CareerTrack.Api
+dotnet user-secrets init
+dotnet user-secrets set "AzureStorage:ConnectionString" "<YOUR_AZURE_STORAGE_CONNECTION_STRING>"
+dotnet user-secrets set "AzureStorage:ContainerName" "careertrack-reports"
+dotnet user-secrets set "AzureFunctions:BaseUrl" "https://careertrack-mp6-flex.azurewebsites.net/api"
+```
 
-Set **CareerTrack.Api** as the startup project and run it. In the tested local configuration, the API listens on:
+### 5. Run the Application
+From the `CareerTrack.Api` directory:
+```bash
+dotnet run
+```
+*Alternatively, set `CareerTrack.Api` as the startup project in Visual Studio and press **F5**.*
 
-- `http://localhost:5043`
-- `https://localhost:7220`
+The API will bind to your local development ports (e.g., `http://localhost:5043` / `https://localhost:7220`).
 
-Open the browser client at:
-
+### 6. Access the Web Interface
+Open your browser and navigate to:
 ```text
-http://localhost:5043/
+http://localhost:5043
 ```
+From the **Job Applications** tab, test the cloud integrations:
+- **Calculate Score**
+- **Follow-Up**
+- **Generate Report**
 
-The API project serves the browser files from `wwwroot` using `UseDefaultFiles()` and `UseStaticFiles()`.
+---
 
-**Local development note:** HTTPS redirection was temporarily disabled during testing because the local ASP.NET Core development certificate was not trusted. The HTTP URL is suitable for local coursework testing only. Restore trusted HTTPS and appropriate access controls before network deployment.
+## 9. Testing & Verification
 
-### 5. Optional console client
+| Test Scenario | Result |
+| :--- | :--- |
+| Azure Functions project builds cleanly | **Passed** |
+| Application scoring executes locally | **Passed** |
+| Follow-up recommendation executes locally | **Passed** |
+| Both functions published to Azure | **Passed** |
+| Application scoring executes in Azure | **Passed** |
+| Follow-up recommendation executes in Azure | **Passed** |
+| API-to-business-to-Azure communication pipeline | **Passed** |
+| Web interface score calculation button | **Passed** |
+| Web interface follow-up button | **Passed** |
+| Azure Blob Storage report upload | **Passed** |
+| Web interface Generate Report button | **Passed** |
+| Existing application regression suite | **Passed** |
 
-Keep the API running, then run the separate console client:
+---
 
-```bash
-dotnet run --project CareerTrack.Client
-```
+## 10. Security & Configuration
 
-The console client communicates with the API over HTTP and demonstrates GET operations. Ensure its configured base URL matches the API's actual listening address.
+- **Secret Isolation:** Storage connection strings and Function URLs are managed via ASP.NET Core User Secrets in development and App Service Configuration in Azure.
+- **Repository Safety:** `local.settings.json`, publish profiles, bin/obj folders, and database files are excluded via `.gitignore`.
+- **Private Access:** The Azure Blob Storage container uses private access (anonymous read disabled).
+- **Service Decoupling:** The client interface does not directly expose cloud infrastructure keys; requests are gated and authenticated through the backend API layer.
 
-## Testing and verification
+---
 
-Testing was performed using the browser client, a separate console client, and Visual Studio HTTP requests.
+## 11. Future Improvements
 
-### CRUD verification
+- Implement user authentication and role-based access control (RBAC) with Microsoft Entra ID.
+- Migrate Azure Functions from anonymous authorization to Function App Keys.
+- Add document upload/download workflows for PDF resumes and cover letters in Azure Blob Storage.
+- Automate follow-up notification emails through Azure Communication Services or SendGrid.
+- Establish automated CI/CD deployment pipelines using GitHub Actions.
 
-- GET all and GET by ID were verified for Companies, JobApplications, and Interviews.
-- Company create, view, update, and delete were exercised through the browser interface.
-- JobApplication create, update, and delete were exercised through HTTP requests using temporary records.
-- Interview create, update, and delete were exercised through HTTP requests using temporary records.
-- After deletion, GET by ID returned `404 Not Found` for the removed temporary records.
+---
 
-### Business-rule verification
+## 12. Graduate-Level Requirement
 
-All six negative test cases returned the expected response:
-
-| Test | Expected result | Observed result |
-| --- | --- | --- |
-| Duplicate company name | 409 Conflict | Passed |
-| Delete company with applications | 409 Conflict | Passed |
-| Negative salary | 400 Bad Request | Passed |
-| Nonexistent company reference | 400 Bad Request | Passed |
-| Nonexistent application status | 400 Bad Request | Passed |
-| Nonexistent interview application reference | 400 Bad Request | Passed |
-
-The six tests cover the five business rules because rule 4 has two separate foreign-key checks.
-
-The `CareerTrackTests.http` file contains requests for API testing. Tests that create or delete records should use temporary data rather than modifying original seed records.
-
-## Known limitations and future work
-
-The current browser UI provides full Company CRUD but mainly read-only views for JobApplications and Interviews. Potential enhancements include:
-
-- Browser forms for creating and editing applications and interviews
-- Kanban tracking by application status
-- Follow-up reminders and interview scheduling
-- Analytics and application conversion metrics
-- Resume and cover-letter tracking
-- Authentication, authorization, and secure deployment
-- Database backup and improved error handling
-
-## Coursework scope
-
-CareerTrack demonstrates a functioning three-tier service architecture, client-facing service models, REST API CRUD endpoints, and five business rules. 
+This project fulfills the graduate-level requirement through the complete integration of **Azure Blob Storage**:
+- Provisioned and configured a dedicated Azure Storage Account.
+- Configured a private `careertrack-reports` Blob container.
+- Implemented `BlobReportService` using the official `Azure.Storage.Blobs` SDK.
+- Created the `/api/jobapplications/{id}/upload-report` API endpoint.
+- Integrated the user-facing **Generate Report** button in the web interface.
+- Verified serialized JSON report artifacts directly in the Azure Portal.
 
 ## Author
 
